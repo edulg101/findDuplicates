@@ -22,27 +22,52 @@ func askForDuplicate() {
 	text = strings.Replace(text, "\r\n", "", -1)
 
 	request := newRequest(text)
-	request.getDuplicates()
-
-}
-
-func getDuplicates(path string) {
-	files, err := ScanFiles(path)
-	if err != nil {
-		panic(err)
-	}
-	logger.Printf(" Encontrei %v arquivos --\n", len(files))
-	fmt.Printf(" Encontrei %v arquivos --\n", len(files))
-	f, err := os.Create("duplicates.csv") // creates a file at current directory
+	files, err := request.ScanFiles()
 	if err != nil {
 		fmt.Println(err)
 	}
+	request.log.Printf(" Encontrei %v arquivos --\n", len(files))
+	fmt.Printf(" Encontrei %v arquivos --\n", len(files))
+	fmt.Println("-----")
+	fmt.Print("Digite 'S' se quiser comparar aquivos independente do nome ou qualquer outra tecla para incluir o nome na comparação: ")
+	text, _ = reader.ReadString('\n')
+	// convert CRLF to LF
+	text = strings.Replace(text, "\r\n", "", -1)
+	var filteredFiles []sameFile
+	if text == "S" || text == "s" {
+		filteredFiles = request.compareSizeAndSum(files)
+	} else {
+		filteredFiles = request.compareAll(files)
+	}
+	f, err := os.Create("duplicates.csv") // creates a file at current directory
+	if err != nil {
+		fmt.Println(err)
+		request.log.Println(err)
+	}
 	defer f.Close()
-	filteredFiles := compareFiles(files)
 	for _, file := range filteredFiles {
-		f.WriteString("\"" + file.path + "\"" + "," + "\"" + file.path1 + "\"" + "\n")
+		f.WriteString(fmt.Sprintf("%v,%v\n", file.path, file.path1))
+		// f.WriteString("\"" + file.path + "\"" + "," + "\"" + file.path1 + "\"" + "\n")
 	}
 }
+
+// func getDuplicates(path string) {
+// 	files, err := ScanFiles(path)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	logger.Printf(" Encontrei %v arquivos --\n", len(files))
+// 	fmt.Printf(" Encontrei %v arquivos --\n", len(files))
+// 	f, err := os.Create("duplicates.csv") // creates a file at current directory
+// 	if err != nil {
+// 		fmt.Println(err)
+// 	}
+// 	defer f.Close()
+// 	filteredFiles := compareFiles(files)
+// 	for _, file := range filteredFiles {
+// 		f.WriteString("\"" + file.path + "\"" + "," + "\"" + file.path1 + "\"" + "\n")
+// 	}
+// }
 
 func compareFiles(files []fileInfo) []sameFile {
 	var sameFiles []sameFile

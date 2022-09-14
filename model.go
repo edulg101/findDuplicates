@@ -45,7 +45,7 @@ func newRequest(path string) request {
 
 	defer f.Close()
 
-	logger = log.New(f, "--> ", log.LstdFlags)
+	logger := log.New(f, "--> ", log.LstdFlags)
 
 	return request{
 		path: path,
@@ -53,29 +53,21 @@ func newRequest(path string) request {
 	}
 }
 
-func (request request) getDuplicates() {
-	path := request.path
-	fmt.Printf("%q\n", path)
-	logger := request.log
-	files, err := request.ScanFiles(path)
-	if err != nil {
-		panic(err)
-	}
-	logger.Printf(" Encontrei %v arquivos --\n", len(files))
-	fmt.Printf(" Encontrei %v arquivos --\n", len(files))
-	f, err := os.Create("duplicates.csv") // creates a file at current directory
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer f.Close()
-	filteredFiles := request.compareFiles(files)
-	for _, file := range filteredFiles {
-		f.WriteString(fmt.Sprintf("%v,%v\n", file.path, file.path1))
-		// f.WriteString("\"" + file.path + "\"" + "," + "\"" + file.path1 + "\"" + "\n")
-	}
-}
+// func (request request) getDuplicates(files []fileInfo) {
+// 	path := request.path
+// 	fmt.Printf("%q\n", path)
+// 	logger := request.log
+// 	logger.Printf(" Encontrei %v arquivos --\n", len(files))
+// 	fmt.Printf(" Encontrei %v arquivos --\n", len(files))
 
-func (request request) compareFiles(files []fileInfo) []sameFile {
+// 	filteredFiles := request.compareFiles(files)
+// 	for _, file := range filteredFiles {
+// 		f.WriteString(fmt.Sprintf("%v,%v\n", file.path, file.path1))
+// 		// f.WriteString("\"" + file.path + "\"" + "," + "\"" + file.path1 + "\"" + "\n")
+// 	}
+// }
+
+func (request request) compareAll(files []fileInfo) []sameFile {
 	var sameFiles []sameFile
 
 	for _, file := range files {
@@ -104,10 +96,38 @@ func (request request) compareFiles(files []fileInfo) []sameFile {
 	}
 	return sameFiles
 }
-func (request request) ScanFiles(rootPath string) ([]fileInfo, error) {
+func (request request) compareSizeAndSum(files []fileInfo) []sameFile {
+	var sameFiles []sameFile
+
+	for _, file := range files {
+		for _, file1 := range files {
+			if file.path == file1.path {
+				break
+			}
+
+			if file.size == file1.size {
+				fileCheckSum := file.getCheckSum()
+				if fileCheckSum == file1.getCheckSum() && len(fileCheckSum) > 0 {
+					fmt.Printf("matched-> %v  <--> %v \n", file.path, file1.path)
+					sameFile := sameFile{
+						name:  file.name,
+						size:  file.size,
+						sum:   fileCheckSum,
+						path:  file.path,
+						path1: file1.path,
+					}
+					sameFiles = append(sameFiles, sameFile)
+				}
+			}
+		}
+	}
+	return sameFiles
+}
+
+func (request request) ScanFiles() ([]fileInfo, error) {
 	var files []fileInfo
 	logger := request.log
-	err := filepath.Walk(rootPath,
+	err := filepath.Walk(request.path,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err

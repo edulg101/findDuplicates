@@ -15,8 +15,6 @@ import (
 	"gopkg.in/vansante/go-ffprobe.v2"
 )
 
-var logger *log.Logger
-
 func main() {
 
 	askForDuplicate()
@@ -47,47 +45,47 @@ func main() {
 	// logger.Println("total:", total)
 }
 
-func findAndMoveSpecificFiles(rootPath, destPath, sufix string) error {
-	err := filepath.Walk(rootPath,
-		func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-			if info.Size() < 4000 && info.Size() > -1 && !info.IsDir() {
-				err := os.Remove(path)
-				if err != nil {
-					panic(err)
-				} else {
-					fmt.Printf("--> %v --- > Removed !!!!!\n", path)
-					logger.Printf("--> %v --- > Removed !!!!!\n", path)
-				}
-			}
+// func findAndMoveSpecificFiles(rootPath, destPath, sufix string) error {
+// 	err := filepath.Walk(rootPath,
+// 		func(path string, info os.FileInfo, err error) error {
+// 			if err != nil {
+// 				return err
+// 			}
+// 			if info.Size() < 4000 && info.Size() > -1 && !info.IsDir() {
+// 				err := os.Remove(path)
+// 				if err != nil {
+// 					panic(err)
+// 				} else {
+// 					fmt.Printf("--> %v --- > Removed !!!!!\n", path)
+// 					logger.Printf("--> %v --- > Removed !!!!!\n", path)
+// 				}
+// 			}
 
-			if strings.HasSuffix(path, strings.ToUpper(sufix)) || strings.HasSuffix(path, strings.ToLower(sufix)) {
-				duration, err := getDuration(path)
-				if err != nil {
-					duration = -1
-				}
-				if duration < 3 && duration >= 0 {
-					fmt.Println(path)
-					fmt.Println(duration)
-					name := filepath.Base(path)
-					destFile := filepath.Join(destPath, name)
-					err := MoveFile(path, destFile)
-					if err != nil {
-						panic(err)
-					}
-				}
+// 			if strings.HasSuffix(path, strings.ToUpper(sufix)) || strings.HasSuffix(path, strings.ToLower(sufix)) {
+// 				duration, err := getDuration(path)
+// 				if err != nil {
+// 					duration = -1
+// 				}
+// 				if duration < 3 && duration >= 0 {
+// 					fmt.Println(path)
+// 					fmt.Println(duration)
+// 					name := filepath.Base(path)
+// 					destFile := filepath.Join(destPath, name)
+// 					err := MoveFile(path, destFile)
+// 					if err != nil {
+// 						panic(err)
+// 					}
+// 				}
 
-			}
+// 			}
 
-			return nil
-		})
-	if err != nil {
-		log.Println(err)
-	}
-	return nil
-}
+// 			return nil
+// 		})
+// 	if err != nil {
+// 		log.Println(err)
+// 	}
+// 	return nil
+// }
 
 func getDuration(path string) (float64, error) {
 	ctx, cancelFn := context.WithTimeout(context.Background(), 10*time.Second)
